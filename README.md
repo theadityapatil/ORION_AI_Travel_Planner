@@ -68,6 +68,14 @@ gunicorn app:app
 3. Configure environment variables in Vercel (GEMINI_API_KEY, UNSPLASH_ACCESS_KEY, SECRET_KEY, ADMIN_PASSWORD).
 4. If using the Dockerfile option, Vercel will build the container and deploy it.
 
+### Vercel specifics and notes
+- This repository includes a `Dockerfile` and a `vercel.json` that instruct Vercel to build the project using Docker (no additional changes required).
+- A `.vercelignore` file is included to avoid uploading environment files, local DB files, and large assets (e.g., `AITRIP.zip`). Remove or relocate large files ( > 50MB ) before deploying for faster builds and a smaller repo.
+- If you prefer automatic GitHub -> Vercel deployments, use Vercel's "Import Project" flow and configure your environment variables in the Vercel dashboard. You can also deploy manually by building the Docker image locally and pushing it to a container registry.
+
+### Note about large files
+The repo currently contains `AITRIP.zip` which exceeds GitHub's recommended 50MB. If you plan to keep the repository lightweight and avoid build issues, consider removing it and placing the asset in Releases, an external storage host, or using Git LFS.
+
 
 ## Contributing
 

@@ -1,0 +1,14 @@
+.git/
+.env
+.env.*
+*.sqlite*
+database.db
+.AITRIP.zip
+AITRIP.zip
+node_modules/
+venv/
+.venv/
+*.log
+.DS_Store
+.vscode/
+.idea/
