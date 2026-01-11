@@ -1,5 +1,9 @@
 import os
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except Exception as e:
+    print(f"google.generativeai not available: {e} — AI features disabled.")
+    genai = None
 from dotenv import load_dotenv
 import json
 import sqlite3
@@ -22,14 +26,17 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_super_secret_key')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
 # Configure the Gemini API if key is provided in environment
-try:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if api_key:
-        genai.configure(api_key=api_key)
-    else:
-        print("GEMINI_API_KEY not set — AI features will be disabled until provided.")
-except Exception as e:
-    print(f"Error configuring Gemini API: {e}")
+api_key = os.getenv("GEMINI_API_KEY")
+if genai is None:
+    print("google.generativeai not installed — AI features will be disabled.")
+else:
+    try:
+        if api_key:
+            genai.configure(api_key=api_key)
+        else:
+            print("GEMINI_API_KEY not set — AI features will be disabled until provided.")
+    except Exception as e:
+        print(f"Error configuring Gemini API: {e}")
 
 # --- Database Helper Function ---
 def get_db_connection():
@@ -50,6 +57,10 @@ def generate():
     if 'user_id' not in session:
         flash("Please log in to generate an itinerary.", "error")
         return redirect(url_for('login'))
+
+    if genai is None or os.getenv("GEMINI_API_KEY") is None:
+        flash('AI features are not available in this deployment.', 'error')
+        return redirect(url_for('index'))
 
     destination = request.form['destination']
     days = request.form['days']
@@ -230,6 +241,10 @@ def explore():
 def explore_category(category):
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    if genai is None or os.getenv("GEMINI_API_KEY") is None:
+        flash('AI features are not available in this deployment.', 'error')
+        return redirect(url_for('explore'))
 
     prompt = f"""
     You are a travel inspiration expert. Generate a list of 8 unique and interesting travel destinations that fit the category: "{category}".
