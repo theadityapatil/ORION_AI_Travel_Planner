@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-header">
+    <h1>Design Your Dream Getaway</h1>
+    <p>Let AI craft your perfect, personalized itinerary in seconds.</p>
+</div>
+
+<form action="{{ url_for('generate') }}" method="post" id="planner-form">
+    
+    <div class="form-group">
+        <label for="destination"><i class="fas fa-globe-americas"></i> Destination</label>
+        <input type="text" id="destination" name="destination" placeholder="e.g., Kyoto, Japan" required>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="days"><i class="fas fa-calendar-alt"></i> Number of Days</label>
+            <input type="number" id="days" name="days" min="1" max="15" placeholder="e.g., 5" required>
+        </div>
+        <div class="form-group">
+            <label for="trip_type"><i class="fas fa-suitcase-rolling"></i> Type of Trip</label>
+            <select id="trip_type" name="trip_type">
+                <option value="Romantic">Romantic</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Family Friendly">Family Friendly</option>
+                <option value="Cultural Exploration">Cultural Exploration</option>
+                <option value="Relaxation">Relaxation</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="travelers"><i class="fas fa-users"></i> Number of Travellers</label>
+            <input type="number" id="travelers" name="travelers" min="1" max="10" value="1" required>
+        </div>
+        <div class="form-group">
+            <label for="budget"><i class="fas fa-rupee-sign"></i> Budget</label>
+            <select id="budget" name="budget">
+                <option value="Pocket-Friendly">Pocket-Friendly</option>
+                <option value="Luxurious">Luxurious</option>
+            </select>
+        </div>
+    </div>
+    
+    <button type="submit">✨ Create My Itinerary</button>
+
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const plannerForm = document.getElementById('planner-form');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    if(plannerForm) {
+        plannerForm.addEventListener('submit', function() {
+            loadingOverlay.style.display = 'flex';
+        });
+    }
+});
+</script>
+{% endblock %}

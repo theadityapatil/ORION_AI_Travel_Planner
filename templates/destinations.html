@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="destinations-container">
+
+    <div class="destinations-header">
+        <h1>Explore: {{ category_title }}</h1>
+        <p>Our AI has curated these special destinations just for you. Ready to plan your trip?</p>
+        <a href="{{ url_for('explore') }}" class="back-link trigger-loader">&larr; Back to Categories</a>
+    </div>
+
+    <div class="destination-grid">
+        {% for dest in destinations %}
+        <div class="destination-card">
+            
+            <div class="card-image" style="background-image: url('{{ dest.image_url }}');"></div>
+            
+            <div class="destination-card-content">
+                <h3>{{ dest.name }}</h3>
+
+                <form action="{{ url_for('generate') }}" method="post" class="plan-form">
+                    <input type="hidden" name="destination" value="{{ dest.name }}">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="days-{{ loop.index }}"><i class="fas fa-calendar-alt"></i></label>
+                            <input type="number" id="days-{{ loop.index }}" name="days" value="5" min="1" max="15" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trip_type-{{ loop.index }}"><i class="fas fa-suitcase-rolling"></i></label>
+                            <select id="trip_type-{{ loop.index }}" name="trip_type">
+                                <option value="Romantic">Romantic</option>
+                                <option value="Adventure">Adventure</option>
+                                <option value="Relaxation">Relaxation</option>
+                                <option value="Cultural">Cultural</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="travelers-{{ loop.index }}"><i class="fas fa-users"></i></label>
+                            <input type="number" id="travelers-{{ loop.index }}" name="travelers" value="1" min="1" max="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="budget-{{ loop.index }}"><i class="fas fa-rupee-sign"></i></label>
+                            <select id="budget-{{ loop.index }}" name="budget">
+                                <option value="Pocket-Friendly">Pocket-Friendly</option>
+                                <option value="Luxurious">Luxurious</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="plan-button">Plan This Trip</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

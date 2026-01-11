@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Travel Planner</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <script
+      src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
+      type="module"
+    ></script>
+
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.32/build/spline-viewer.js"></script>
+</head>
+<body class="{{ body_class|default('') }}">
+<canvas id="spline-bg" aria-hidden="true"></canvas>
+<spline-viewer id="spline-viewer" url="https://prod.spline.design/KznNBPuB-wpl3b7V/scene.splinecode" aria-hidden="true" class="spline-viewer"></spline-viewer>
+<!-- Small fixed overlay to hide the Spline watermark if present -->
+<div id="spline-watermark-block" aria-hidden="true" class="spline-watermark-block"></div>
+
+<button id="bg-toggle" aria-pressed="true" title="Toggle background" aria-label="Toggle background" class="bg-toggle">✨</button>
+
+<!-- Background settings panel -->
+<div id="bg-settings" class="bg-settings" aria-hidden="true">
+  <div class="bg-settings-inner">
+    <div class="bg-settings-row">
+      <label for="bg-color">Color</label>
+      <input id="bg-color" type="color" aria-label="Background spline color" />
+    </div>
+    <div class="bg-settings-row">
+      <label for="bg-intensity">Intensity</label>
+      <input id="bg-intensity" type="range" min="0.4" max="2" step="0.01" value="1" aria-label="Spline intensity" />
+    </div>
+    <div class="bg-settings-row">
+      <label for="bg-points">Detail</label>
+      <select id="bg-points" aria-label="Spline detail points">
+        <option value="4">Low</option>
+        <option value="6" selected>Medium</option>
+        <option value="8">High</option>
+        <option value="10">Ultra</option>
+      </select>
+    </div>
+    <div class="bg-settings-actions">
+      <button id="bg-reset" type="button">Reset</button>
+      <button id="bg-close" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay">
+  <div class="loading-card">
+    <dotlottie-player
+      src="{{ url_for('static', filename='loader.json') }}"
+      background="transparent"
+      speed="1"
+      style="width: 200px; height: 200px"
+      loop
+      autoplay
+    ></dotlottie-player>
+    <p id="loading-text">Scouting the best locations...</p>
+  </div>
+</div>
+
+<header class="top-bar">
+    <div class="brand-title">
+        <a href="{{ url_for('admin_dashboard') if is_admin_page else url_for('index') }}">✈️ AI Travel Planner</a>
+    </div>
+    
+    {% if not is_admin_page %}
+    <div class="user-info">
+        {% if session['user_id'] %}
+            <span>Hello, {{ session['name'] }}!</span>
+        {% else %}
+            <a href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</header>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+{% if session['user_id'] and not is_admin_page %}
+<nav class="bottom-nav">
+    <a href="{{ url_for('index') }}" class="nav-link trigger-loader">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="{{ url_for('explore') }}" class="nav-link explore-button trigger-loader">
+        <i class="fas fa-compass"></i>
+    </a>
+    <a href="{{ url_for('logout') }}" class="nav-link">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+    </a>
+</nav>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+
+        const messages = [
+            "Scouting the best locations...",
+            "Packing the virtual bags...",
+            "Consulting the globetrotters...",
+            "Charting your course to adventure...",
+            "Polishing the hidden gems...",
+            "Waking up the AI travel agent..."
+        ];
+        let messageIndex = 0;
+        let textInterval;
+
+        function showLoader() {
+            loadingOverlay.style.display = 'flex';
+            loadingText.textContent = messages[0];
+            loadingText.classList.add('fade-in');
+
+            textInterval = setInterval(() => {
+                messageIndex = (messageIndex + 1) % messages.length;
+                loadingText.classList.remove('fade-in');
+                setTimeout(() => {
+                    loadingText.textContent = messages[messageIndex];
+                    loadingText.classList.add('fade-in');
+                }, 500);
+            }, 3000);
+        }
+
+        const forms = document.querySelectorAll('#planner-form, .plan-form');
+        forms.forEach(form => {
+            form.addEventListener('submit', showLoader);
+        });
+        
+        const loaderTriggers = document.querySelectorAll('.trigger-loader');
+        loaderTriggers.forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                if (e.button === 1 || e.ctrlKey || e.metaKey) return;
+                e.preventDefault();
+                showLoader();
+                setTimeout(() => { window.location.href = this.href; }, 150);
+            });
+        });
+    });
+</script>
+
+<script>
+/* Interactive spline-like canvas background (lightweight, cursor responsive) */
+(function () {
+  const canvas = document.getElementById('spline-bg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w = 0, h = 0, DPR = window.devicePixelRatio || 1;
+  const POINT_COUNT = 6;
+  const points = [];
+  const mouse = { x: -9999, y: -9999 };
+
+  function resize() {
+    DPR = window.devicePixelRatio || 1;
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = Math.floor(w * DPR);
+    canvas.height = Math.floor(h * DPR);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    points.length = 0;
+    for (let i = 0; i < POINT_COUNT; i++) {
+      points.push({
+        x: w * (i / (POINT_COUNT - 1)),
+        y: h / 2,
+        vx: 0, vy: 0
+      });
+    }
+  }
+
+  function onPointer(e) {
+    const p = e.touches ? e.touches[0] : e;
+    mouse.x = p.clientX;
+    mouse.y = p.clientY;
+  }
+
+  window.addEventListener('pointermove', onPointer, { passive: true });
+  window.addEventListener('touchmove', onPointer, { passive: true });
+  window.addEventListener('pointerleave', () => { mouse.x = -9999; mouse.y = -9999; }, { passive: true });
+  window.addEventListener('resize', resize);
+
+  function update() {
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const influenceX = (mouse.x === -9999) ? 0 : (mouse.x - w / 2) * 0.05;
+      const influenceY = (mouse.y === -9999) ? 0 : (mouse.y - h / 2) * 0.12;
+      const mid = (POINT_COUNT - 1) / 2;
+      const factor = 1 - Math.abs(i - mid) / (POINT_COUNT);
+
+      const tx = w * (i / (POINT_COUNT - 1)) + influenceX * factor;
+      const ty = h / 2 + influenceY * ((i - mid) / (POINT_COUNT / 2));
+
+      p.vx += (tx - p.x) * 0.06;
+      p.vy += (ty - p.y) * 0.06;
+      p.vx *= 0.86; p.vy *= 0.86;
+      p.x += p.vx; p.y += p.vy;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // gentle overlay so content reads well
+    ctx.fillStyle = 'rgba(10,18,26,0.02)';
+    ctx.fillRect(0, 0, w, h);
+
+    // draw several layered smooth strokes to create a spline feel
+    for (let layer = 0; layer < 3; layer++) {
+      ctx.beginPath();
+      const offsetY = (layer - 1) * 8;
+      ctx.moveTo(points[0].x, points[0].y + offsetY);
+      for (let i = 1; i < points.length - 1; i++) {
+        const p0 = points[i];
+        const p1 = points[i + 1];
+        const cx = (p0.x + p1.x) / 2;
+        const cy = (p0.y + p1.y) / 2 + offsetY;
+        ctx.quadraticCurveTo(p0.x, p0.y + offsetY, cx, cy);
+      }
+      ctx.lineWidth = 1.6 + layer * 1.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const a = Math.max(0.04, 0.18 - layer * 0.05);
+      ctx.strokeStyle = `rgba(0,150,200,${a})`;
+      ctx.stroke();
+    }
+
+    // subtle cursor glow
+    if (mouse.x !== -9999) {
+      ctx.beginPath();
+      const r = 22;
+      const grd = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, r);
+      grd.addColorStop(0, 'rgba(0,150,200,0.12)');
+      grd.addColorStop(1, 'rgba(0,150,200,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(mouse.x - r, mouse.y - r, r * 2, r * 2);
+    }
+  }
+
+  function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script defer src="{{ url_for('static', filename='spline-bg.js') }}"></script>
+
+</body>
+</html>

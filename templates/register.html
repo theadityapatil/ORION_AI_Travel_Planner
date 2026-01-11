@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-header">
+    <h2>Join the Adventure!</h2>
+    <p>Create your travel profile to get started.</p>
+</div>
+
+<form method="post">
+    <div class="form-group">
+        <label for="name"><i class="fas fa-signature"></i> Full Name</label>
+        <input type="text" name="name" id="name" required>
+    </div>
+
+    <div class="form-group">
+        <label for="email"><i class="fas fa-envelope"></i> Email</label>
+        <input type="email" name="email" id="email" required>
+    </div>
+
+    <div class="form-group">
+        <label for="number"><i class="fas fa-phone"></i> Phone Number</label>
+        <input type="tel" name="number" id="number" required>
+    </div>
+
+    <div class="form-group">
+        <label for="username"><i class="fas fa-user"></i> Username</label>
+        <input name="username" id="username" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="password"><i class="fas fa-lock"></i> Password</label>
+        <input type="password" name="password" id="password" required>
+    </div>
+
+    <button type="submit">Create Account</button>
+</form>
+
+<div class="auth-switch">
+    <p>Already have an account? <a href="{{ url_for('login') }}">Log In</a></p>
+</div>
+
+{% endblock %}

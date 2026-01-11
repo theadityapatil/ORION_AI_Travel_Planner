@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="results-container">
+
+    <div class="destination-header" style="background-image: url('{{ image_url }}');">
+        <div class="destination-name">
+            <h1>{{ destination }}</h1>
+            <p>Your personalized {{ days }}-day {{ trip_type }} adventure awaits!</p>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <a href="{{ url_for('index') }}" class="back-link">&larr; Plan another trip</a>
+        <a href="{{ url_for('download_pdf', trip_id=trip_id) }}" class="download-link">
+            <i class="fas fa-file-pdf"></i> Download PDF
+        </a>
+    </div>
+    
+    {% if estimated_cost %}
+    <div class="cost-card">
+        <h3><i class="fas fa-rupee-sign"></i> Estimated Trip Cost</h3>
+        <p>{{ estimated_cost }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="itinerary-details">
+        {% for day_plan in itinerary %}
+            <div class="day-card">
+                <h2>{{ day_plan.day }}</h2>
+                <table class="itinerary-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-map-marker-alt"></i> Place to Visit</th>
+                            <th><i class="fas fa-clock"></i> Time to Spend</th>
+                            <th><i class="fas fa-tasks"></i> Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in day_plan.plan %}
+                        <tr>
+                            <td>{{ activity.place }}</td>
+                            <td>{{ activity.time_to_spend }}</td>
+                            <td>{{ activity.activity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="rating-container" data-trip-id="{{ trip_id }}">
+        <h3>Enjoyed this itinerary? Rate it!</h3>
+        <div class="rating-stars">
+            <i class="fas fa-star star" data-value="1"></i>
+            <i class="fas fa-star star" data-value="2"></i>
+            <i class="fas fa-star star" data-value="3"></i>
+            <i class="fas fa-star star" data-value="4"></i>
+            <i class="fas fa-star star" data-value="5"></i>
+        </div>
+        <p class="rating-feedback"></p>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ratingContainer = document.querySelector('.rating-container');
+        if (!ratingContainer) return;
+
+        const stars = ratingContainer.querySelectorAll('.star');
+        const feedbackEl = ratingContainer.querySelector('.rating-feedback');
+        const tripId = ratingContainer.dataset.tripId;
+        let isRated = false;
+
+        function setRating(ratingValue) {
+            stars.forEach(star => {
+                if (parseInt(star.dataset.value) <= ratingValue) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+            });
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                if (isRated) return;
+                setRating(star.dataset.value);
+            });
+
+            star.addEventListener('mouseout', () => {
+                if (isRated) return;
+                setRating(0); // Reset on mouse out
+            });
+
+            star.addEventListener('click', async () => {
+                if (isRated) return;
+                isRated = true;
+                const rating = star.dataset.value;
+                setRating(rating);
+
+                try {
+                    const response = await fetch(`/rate-trip/${tripId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ rating: parseInt(rating) }),
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        feedbackEl.textContent = result.message;
+                        feedbackEl.style.color = 'var(--secondary-color)';
+                    } else {
+                        feedbackEl.textContent = `Error: ${result.message}`;
+                        feedbackEl.style.color = '#ff6b6b';
+                        isRated = false; // Allow re-trying if there was an error
+                    }
+                } catch (error) {
+                    feedbackEl.textContent = 'A network error occurred. Please try again.';
+                    feedbackEl.style.color = '#ff6b6b';
+                    isRated = false;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
